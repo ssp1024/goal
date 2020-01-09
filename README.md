@@ -1,10 +1,36 @@
 # goal for go programmning
 
-## 目标
+[中文](/README_cn.md)
 
-加速golang日常开发，使开发体验像python一样流畅
+## goals
 
-- 轻量：只依赖标准库，不引入第三方依赖
-- 高效：选择最高效方式实现，不必担心性能问题
-- 简洁：接口简单，不引入复杂实现
-- 通用：实现核心功能，用 20% 的实现覆盖 80% 的需求
+Include very helpeful toolkit for golang daily development. Eventually provide taste of Python usage.
+
+- Lightweight: only depends standrand library, no third part.
+- Efficient: use best solution to reslove task, dont worry performance problem.
+- Brief: keep interface simplify, no complex API.
+- General: solve more problem by less code.
+
+## Usage
+
+1. install library
+
+    ```bash
+    go get github.com/sweetycode/goal
+    ```
+
+2. import library
+
+    ```go
+    import "github.com/sweetycode/goal"
+    ```
+
+3. use as you want
+
+    ```go
+    intVal := goal.Atoi("123")
+    ```
+
+## License
+
+This project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
