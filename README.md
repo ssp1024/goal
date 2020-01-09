@@ -4,12 +4,12 @@
 
 ## goals
 
-Include very helpeful toolkit for golang daily development. Eventually provide taste of Python usage.
+Include very helpeful toolkit for daily golang development. Hope provide taste of Python.
 
-- Lightweight: only depends standrand library, no third part.
-- Efficient: use best solution to reslove task, dont worry performance problem.
-- Brief: keep interface simplify, no complex API.
-- General: solve more problem by less code.
+- **Lightweight**: only depends on standrand library, NO third part dependency.
+- **Efficient**: use best solution to reslove task, don't worry performance.
+- **Brief**: keep interface simplify, no complex API.
+- **General**: solve more problem by less code.
 
 ## Usage
 
@@ -19,7 +19,7 @@ Include very helpeful toolkit for golang daily development. Eventually provide t
     go get github.com/sweetycode/goal
     ```
 
-2. import library
+2. import library in you project
 
     ```go
     import "github.com/sweetycode/goal"
