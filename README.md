@@ -1,10 +1,10 @@
 # goal for go programmning
 
+Very helpeful toolkit libaray for daily golang development. Hope provide taste of Python.
+
 [中文](/README_cn.md)
 
-## goals
-
-Include very helpeful toolkit for daily golang development. Hope provide taste of Python.
+## Principle
 
 - **Lightweight**: only depends on standrand library, NO third part dependency.
 - **Efficient**: use best solution to reslove task, don't worry performance.
