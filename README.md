@@ -8,7 +8,7 @@ Include very helpeful toolkit for daily golang development. Hope provide taste o
 
 - **Lightweight**: only depends on standrand library, NO third part dependency.
 - **Efficient**: use best solution to reslove task, don't worry performance.
-- **Brief**: keep interface simplify, no complex API.
+- **Simplify**: keep interface simplify, no complex API.
 - **General**: solve more problem by less code.
 
 ## Usage
