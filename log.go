@@ -60,3 +60,7 @@ func Errorf(format string, args ...interface{}) {
 func Infof(format string, args ...interface{}) {
 	logf(InfoLevel, format, args...)
 }
+
+func Debugf(format string, args ...interface{}) {
+	logf(DebugLevel, format, args...)
+}

@@ -10,6 +10,7 @@ type Stat interface {
 	String() string
 	Incr(string) Stat
 	IncrN(string, int) Stat
+	Stop()
 }
 
 type statItem struct {
@@ -80,6 +81,9 @@ func cached(fn func(string)) func(StatKV, bool) {
 
 func newStat(duration time.Duration, fn func(StatKV, bool)) Stat {
 	stat := &statImpl{
+		duration: duration,
+		fn:       fn,
+
 		kv:       make(StatKV),
 		shadowKv: nil,
 		ch:       make(chan statItem, 10000),
@@ -121,7 +125,7 @@ func (stat *statImpl) collectorThread() {
 			dirty = true
 			val, ok := stat.kv[item.key]
 			if !ok {
-				val := &StatVal{}
+				val = &StatVal{}
 				stat.kv[item.key] = val
 			}
 			val.Incr(item.val)

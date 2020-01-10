@@ -7,6 +7,16 @@ import (
 	"strings"
 )
 
+func StringIn(s string, vals []string) bool {
+	for _, v := range vals {
+		if v == s {
+			return true
+		}
+	}
+
+	return false
+}
+
 func Prefixed(s, prefix string) string {
 	if !strings.HasPrefix(s, prefix) {
 		return prefix + s
@@ -27,11 +37,21 @@ func AppendNewline(s string) string {
 }
 
 func Split2(s, sep string) (s1, s2 string) {
-	segs := strings.SplitN(s, sep, 2)
-	if len(segs) == 1 {
-		return segs[0], ""
+	index := strings.Index(s, sep)
+	if index < 0 {
+		return s, ""
+	} else {
+		return s[:index], s[index+len(sep):]
 	}
-	return segs[0], segs[1]
+}
+
+func RSplit2(s, sep string) (s1, s2 string) {
+	index := strings.LastIndex(s, sep)
+	if index < 0 {
+		return s, ""
+	} else {
+		return s[:index], s[index+len(sep):]
+	}
 }
 
 func Atoi(s string) int {
