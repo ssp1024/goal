@@ -2,6 +2,7 @@ package goal
 
 import (
 	"bytes"
+	"fmt"
 	"time"
 )
 
@@ -16,12 +17,70 @@ type statItem struct {
 	val int
 }
 
-type statVal int
+type StatVal struct {
+	n int
+}
 
-func NewStat(duration time.Duration) Stat {
+func (v *StatVal) Value() int {
+	return v.n
+}
+
+func (v *StatVal) String() string {
+	return Itoa(v.n)
+}
+
+type StatKV map[string]*StatVal
+
+func (kv StatKV) Serialize() string {
+	buffer := &bytes.Buffer{}
+	buffer.WriteString("[")
+
+	if kv != nil {
+		for k, v := range kv {
+			buffer.WriteString(k)
+			buffer.WriteString(":")
+			buffer.WriteString(v.String())
+			buffer.WriteString(", ")
+		}
+	}
+	buffer.WriteString("]")
+
+	return buffer.String()
+}
+
+func (v *StatVal) Incr(n int) {
+	v.n += n
+}
+
+func NewStat() Stat {
+	return newStat(0, nil)
+}
+
+func NewLogStat(duration time.Duration) Stat {
+	return newStat(duration, cached(func(s string) {
+		Infof(s)
+	}))
+}
+
+func NewPrintStat(duration time.Duration) Stat {
+	return newStat(duration, cached(func(s string) {
+		fmt.Println(s)
+	}))
+}
+
+func cached(fn func(string)) func(StatKV, bool) {
+	var cache string
+	return func(kv StatKV, dirty bool) {
+		if dirty {
+			cache = kv.Serialize()
+		}
+		fn(cache)
+	}
+}
+
+func newStat(duration time.Duration, fn func(StatKV, bool)) Stat {
 	stat := &statImpl{
-		duration: duration,
-		kv:       make(map[string]*statVal),
+		kv:       make(StatKV),
 		shadowKv: nil,
 		ch:       make(chan statItem, 10000),
 		waitStop: NewWaitStop(),
@@ -30,24 +89,11 @@ func NewStat(duration time.Duration) Stat {
 	return stat
 }
 
-func NewLogStat(duration time.Duration) Stat {
-	stat := NewStat(duration)
-
-	go func() {
-		ticker := time.NewTicker(duration)
-		defer ticker.Stop()
-		for range ticker.C {
-			Infof(stat.String())
-		}
-	}()
-
-	return stat
-}
-
 type statImpl struct {
 	duration time.Duration
+	fn       func(kv StatKV, dirty bool)
 
-	kv       map[string]*statVal
+	kv       StatKV
 	shadowKv map[string]int
 	ch       chan statItem
 
@@ -58,45 +104,32 @@ func (stat *statImpl) collectorThread() {
 	defer stat.waitStop.Stop()
 
 	var tickerCh <-chan time.Time
-	if stat.duration > 0 {
+	if stat.duration > 0 && stat.fn != nil {
 		ticker := time.NewTicker(stat.duration)
 		defer ticker.Stop()
 		tickerCh = ticker.C
 	}
 
 	dirty := false
-	syncShadow := func() {
-		if dirty {
-			shadow := make(map[string]int, len(stat.kv))
-			for k, v := range stat.kv {
-				shadow[k] = int(*v)
-			}
-			stat.shadowKv = shadow
-		}
-	}
 
-outter:
 	for {
 		select {
 		case item, ok := <-stat.ch:
-			dirty = true
 			if !ok {
-				break outter
+				return
 			}
+			dirty = true
 			val, ok := stat.kv[item.key]
 			if !ok {
-				var n statVal
-				val = &n
+				val := &StatVal{}
 				stat.kv[item.key] = val
 			}
-			*val++
+			val.Incr(item.val)
 		case <-tickerCh:
-			syncShadow()
+			stat.fn(stat.kv, dirty)
 			dirty = false
 		}
 	}
-
-	syncShadow()
 }
 
 func (stat *statImpl) IncrN(key string, n int) Stat {
@@ -120,16 +153,12 @@ func (stat *statImpl) Stop() {
 
 func (stat *statImpl) String() string {
 	buffer := &bytes.Buffer{}
-	buffer.WriteString("Stat[")
+	buffer.WriteString("Stat")
 
-	if stat.shadowKv != nil {
-		for k, v := range stat.shadowKv {
-			buffer.WriteString(k)
-			buffer.WriteString(":")
-			buffer.WriteString(Itoa(v))
-			buffer.WriteString(", ")
-		}
+	if stat.waitStop.Stopped() {
+		buffer.WriteString(stat.kv.Serialize())
+	} else {
+		buffer.WriteString("[running...]")
 	}
-	buffer.WriteString("]")
 	return buffer.String()
 }
