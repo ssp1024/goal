@@ -2,7 +2,9 @@
 
 Very helpeful toolkit libaray for daily golang development. Hope provide taste of Python.
 
-[中文](/README_cn.md)
+[中文地址](/README_cn.md)
+
+[Document](https://godoc.org/github.com/sweetycode/goal)
 
 ## Principle
 

@@ -4,6 +4,8 @@
 
 [英文](/README.md)
 
+[文档](https://godoc.org/github.com/sweetycode/goal)
+
 ## 原则
 
 - **轻量**：只依赖标准库，不引入第三方依赖

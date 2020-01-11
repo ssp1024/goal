@@ -6,10 +6,17 @@ import (
 	"time"
 )
 
+//Stat provide efficient way to collect application statistics. can used in high concurrency situation.
+//
+//Internal implemention avoid use of synchronize operation,  the tride off is cannot retrive metrics value.
 type Stat interface {
+	//Get stringify of statistics.
 	String() string
-	Incr(string) Stat
-	IncrN(string, int) Stat
+	//Incr statistics `key` by 1
+	Incr(key string) Stat
+	//Incr statistics `key` by n
+	IncrN(key string, n int) Stat
+	//Stop stat
 	Stop()
 }
 
@@ -18,21 +25,25 @@ type statItem struct {
 	val int
 }
 
-type StatVal struct {
+type statVal struct {
 	n int
 }
 
-func (v *StatVal) Value() int {
+func (v *statVal) Value() int {
 	return v.n
 }
 
-func (v *StatVal) String() string {
+func (v *statVal) String() string {
 	return Itoa(v.n)
 }
 
-type StatKV map[string]*StatVal
+func (v *statVal) Incr(n int) {
+	v.n += n
+}
 
-func (kv StatKV) Serialize() string {
+type statKV map[string]*statVal
+
+func (kv statKV) Serialize() string {
 	buffer := &bytes.Buffer{}
 	buffer.WriteString("[")
 
@@ -49,42 +60,41 @@ func (kv StatKV) Serialize() string {
 	return buffer.String()
 }
 
-func (v *StatVal) Incr(n int) {
-	v.n += n
-}
-
+//NewStat create new instance.
 func NewStat() Stat {
 	return newStat(0, nil)
 }
 
+//NewLogStat create new instance, and log stat every `duration` interval.
 func NewLogStat(duration time.Duration) Stat {
 	return newStat(duration, cached(func(s string) {
 		Infof(s)
 	}))
 }
 
+//NewPrintStat create new instance, and print stat every `duration` interval.
 func NewPrintStat(duration time.Duration) Stat {
 	return newStat(duration, cached(func(s string) {
 		fmt.Println(s)
 	}))
 }
 
-func cached(fn func(string)) func(StatKV, bool) {
+func cached(fn func(string)) func(statKV, bool) {
 	var cache string
-	return func(kv StatKV, dirty bool) {
+	return func(kv statKV, dirty bool) {
 		if dirty {
-			cache = kv.Serialize()
+			cache = "Stat" + kv.Serialize()
 		}
 		fn(cache)
 	}
 }
 
-func newStat(duration time.Duration, fn func(StatKV, bool)) Stat {
+func newStat(duration time.Duration, fn func(statKV, bool)) Stat {
 	stat := &statImpl{
 		duration: duration,
 		fn:       fn,
 
-		kv:       make(StatKV),
+		kv:       make(statKV),
 		shadowKv: nil,
 		ch:       make(chan statItem, 10000),
 		waitStop: NewWaitStop(),
@@ -95,9 +105,9 @@ func newStat(duration time.Duration, fn func(StatKV, bool)) Stat {
 
 type statImpl struct {
 	duration time.Duration
-	fn       func(kv StatKV, dirty bool)
+	fn       func(kv statKV, dirty bool)
 
-	kv       StatKV
+	kv       statKV
 	shadowKv map[string]int
 	ch       chan statItem
 
@@ -125,7 +135,7 @@ func (stat *statImpl) collectorThread() {
 			dirty = true
 			val, ok := stat.kv[item.key]
 			if !ok {
-				val = &StatVal{}
+				val = &statVal{}
 				stat.kv[item.key] = val
 			}
 			val.Incr(item.val)
